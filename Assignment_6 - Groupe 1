@@ -1,0 +1,122 @@
+import React, { useState, useEffect } from 'react';
+
+const QUERY = "spielberg"; // Hardcoded query string
+const API_KEY = ""; // API key for The Movie Database API (Use own API_KEY if you want to test)
+
+// For task 4 make a person a component
+function Person({ person }) {
+    return (
+        <li>
+            {/*h is used for healiners and h3 is a sub-headliner*/}
+            <h3>{person.name}</h3>
+            {/*Displays known_for_department*/}
+            <p><strong>Known For Department:</strong> {person.known_for_department}</p>
+            {/* Display Known For movies */}
+            {person.known_for && <KnownForMovies knownFor={person.known_for} />}
+            {/* Display profile images */}
+            <ImagesFor personId={person.id} />
+        </li>
+    );
+}
+
+// Task 6: Known_For_Movies component
+function KnownForMovies({ knownFor }) {
+    return (
+        <ul>
+            {/*map is a java method that can apply a function to every element in the array*/}
+            {knownFor.map((movie) => (
+                <li key={movie.id}>
+                    <h4>{movie.title || movie.name}</h4>
+                    {/*p is for paragrah and can be used for commen text for and component*/}
+                    {/*Stong makes the text bold*/}
+                    <p><strong>Release Date:</strong> {movie.release_date}</p>
+                    <p><strong>Overview:</strong> {movie.overview}</p>
+                </li>
+            ))}
+        </ul>
+    );
+}
+
+// Task 7: ImagesFor component (to render profile images)
+function ImagesFor({ personId }) {
+    const [images, setImages] = useState([]);
+
+    useEffect(() => {
+        const getImages = async () => {
+            try {
+                const response = await fetch(
+                    `https://api.themoviedb.org/3/person/${personId}/images?api_key=${API_KEY}`
+                );
+                const result = await response.json();
+                setImages(result.profiles); // Extracts image profiles
+            } catch (err) {
+                console.error("Error fetching images:", err);
+            }
+        };
+
+        getImages();
+    }, [personId]);
+
+    return (
+        <div>
+            {images.map((image) => (
+                <img
+                    key={image.file_path}
+                    src={`https://image.tmdb.org/t/p/w200${image.file_path}`}
+                    alt="Person Profile"
+                />
+            ))}
+        </div>
+    );
+}
+
+// Task 5: Main App Component
+function App() {
+    const [persons, setPersons] = useState([]); // Stores fetched data
+    const [error, setError] = useState(null); // Error state
+    const [selectedPersonIndex, setSelectedPersonIndex] = useState(0); // Tracks the selected person
+
+    useEffect(() => {
+        const fetchPersons = async () => {
+            try {
+                const response = await fetch(
+                    `https://api.themoviedb.org/3/search/person?api_key=${API_KEY}&query=${QUERY}`
+                );
+                const result = await response.json();
+                setPersons(result.results); // Update state with fetched data
+            } catch (err) {
+                setError(err.message); // Error handling
+            }
+        };
+
+        fetchPersons();
+    }, []); // Runs once becuse its empty
+
+    const handlePersonChange = (index) => {
+        setSelectedPersonIndex(index); // Change the selected person when a button is clicked
+    };
+
+    return (
+        <div className="App">
+            {/*Searching for the name from Query*/}
+            <h1>Search Results for "{QUERY}"</h1>
+
+            {/*checking if the name is longer than 0*/}
+            {persons.length > 0 && (
+                <div>
+                    <Person person={persons[selectedPersonIndex]} />
+                    <div>
+                        {persons.map((person, index) => (
+                            <button key={person.id} onClick={() => handlePersonChange(index)}>
+                                {person.name}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+
+}
+
+export default App;
